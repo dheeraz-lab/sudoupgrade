@@ -1,0 +1,32 @@
+---
+- name: Upgrade sudo using dnf on RHEL 8/9
+  hosts: all
+  become: yes
+  gather_facts: yes
+
+  tasks:
+
+    - name: Check if the system is RHEL 8 or 9
+      ansible.builtin.assert:
+        that:
+          - ansible_distribution == "RedHat"
+          - ansible_distribution_major_version in ["8", "9"]
+        fail_msg: "This playbook is only for RHEL 8 or 9 systems."
+
+    - name: Refresh DNF metadata
+      ansible.builtin.command: dnf makecache
+      changed_when: false
+
+    - name: Upgrade only the sudo package
+      ansible.builtin.dnf:
+        name: sudo
+        state: latest
+        update_cache: yes
+
+    - name: Check sudo version after upgrade
+      ansible.builtin.shell: sudo -V | head -n 1
+      register: sudo_version
+
+    - name: Show upgraded sudo version
+      ansible.builtin.debug:
+        msg: "Sudo has been upgraded to version: {{ sudo_version.stdout }}"
